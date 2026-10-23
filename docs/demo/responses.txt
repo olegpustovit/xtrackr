@@ -1,0 +1,12 @@
+XTrackr prototype: actual local HTTP responses
+
+GET /health
+OK
+
+POST /track with a sample payload
+Event tracked
+
+POST /consent with a sample payload
+Consent updated
+
+The last two replies are fixed strings, not confirmation of database writes.

@@ -1,160 +1,70 @@
-> 🚧 Work in Progress
-> XTrackr is currently under active development. While key features are in place, expect breaking changes, incomplete documentation, and the occasional existential bug. Contributions and feedback are welcome—just don’t expect a polished experience yet.
-
 # XTrackr
 
-A privacy-first, GDPR-compliant tracking solution built with Rust and PostgreSQL.
+An unfinished Rust HTTP service with a PostgreSQL schema for web analytics.
+It starts a connection pool, runs migrations and exposes three routes.
 
-## Features
+![Actual health and placeholder endpoint responses from a local run](docs/demo/responses.png)
 
-- Privacy-first design
-- GDPR compliance
-- IP anonymization
-- Configurable data retention
-- Consent management
-- Fast and memory-safe implementation
-- PostgreSQL backend
+The capture shows the current behavior, including placeholder replies. It does
+not demonstrate working analytics. See [capture details](docs/demo/README.md).
 
-## Local Development Setup
+## What works and what does not
 
-### Prerequisites
+| Route | Current behavior |
+| --- | --- |
+| `GET /health` | Return `OK` |
+| `POST /track` | Return `Event tracked` without reading or storing the event |
+| `POST /consent` | Return `Consent updated` without reading or storing consent |
 
-- Rust 1.86 or later
-- PostgreSQL 13 or later
-- Docker and Docker Compose (optional)
-- Diesel CLI
+There is no `/session` route. The privacy settings are loaded but not applied.
+IP anonymization, retention, consent management and deletion are not implemented.
 
-### Installing Diesel CLI
 
-```bash
-cargo install diesel_cli --no-default-features --features postgres
+## Run locally
+
+You need Rust, PostgreSQL and its `libpq` development library for Diesel. The
+recorded run used the locked dependencies and PostgreSQL 13 in a temporary local
+container. Use an empty development database; startup runs the migrations.
+
+```sh
+git clone https://github.com/olegpustovit/xtrackr.git
+cd xtrackr
+cargo build --locked
 ```
 
-2. Run migrations:
-```bash
-# Run all pending migrations
-diesel migration run
+Export the nested settings with **double underscores** between their parts:
+
+```sh
+export DATABASE__URL='postgres://your-user:your-password@127.0.0.1:5432/xtrackr'
+export DATABASE__MAX_CONNECTIONS=2
+export SERVER__ADDRESS='127.0.0.1:3000'
+export PRIVACY__DATA_RETENTION_DAYS=90
+export PRIVACY__ANONYMIZE_IP=true
+export PRIVACY__COOKIE_LIFETIME_DAYS=365
+cargo run --locked
 ```
 
-3. Build and run the application:
-```bash
-cargo run
+The privacy values are required configuration fields, not enforced policies.
+Use credentials for your own local development database, not the literal example.
+
+In another terminal:
+
+```sh
+sh docs/demo/requests.sh
 ```
 
-### Docker Setup
+The service embeds its migrations, so this quick start does not require the
+Diesel CLI. The existing Dockerfile and Compose file are legacy setup material;
+they have not been qualified and use an old toolchain and different environment
+variable names. Use the direct-source instructions above.
 
-1. Start the services:
-```bash
-docker-compose up -d
-```
+## Implementation
 
-4. Run migrations in the container:
-```bash
-docker-compose exec app diesel migration run
-```
-
-## Testing the Application
-
-### Health Check
-
-```bash
-curl http://localhost:3000/health
-# Expected response: "OK"
-```
-
-### Tracking an Event
-
-1. First, create a visitor and get consent:
-```bash
-curl -X POST http://localhost:3000/consent \
-  -H "Content-Type: application/json" \
-  -d '{
-    "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
-    "consent_given": true
-  }'
-```
-
-2. Create a session:
-```bash
-curl -X POST http://localhost:3000/session \
-  -H "Content-Type: application/json" \
-  -d '{
-    "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
-    "user_agent": "Mozilla/5.0",
-    "ip_address": "192.168.1.1"
-  }'
-```
-
-3. Track an event:
-```bash
-curl -X POST http://localhost:3000/track \
-  -H "Content-Type: application/json" \
-  -d '{
-    "session_id": "550e8400-e29b-41d4-a716-446655440000",
-    "event_type": "page_view",
-    "path": "/home",
-    "user_agent": "Mozilla/5.0",
-    "referrer": "https://example.com",
-    "ip_address": "192.168.1.1",
-    "metadata": {
-      "screen_width": 1920,
-      "screen_height": 1080
-    }
-  }'
-```
-
-### Verifying Data
-
-You can check the data in PostgreSQL:
-
-```bash
-# Connect to the database
-psql -U postgres -d xtrackr
-
-# Check visitors
-SELECT * FROM visitors;
-
-# Check sessions
-SELECT * FROM sessions;
-
-# Check events
-SELECT * FROM events;
-```
-
-## Development Workflow
-
-1. Make changes to the code
-2. Run tests:
-```bash
-cargo test
-```
-
-3. Run migrations (if schema changes):
-```bash
-diesel migration generate <migration_name>
-# Edit the generated migration files
-diesel migration run
-```
-
-4. Build and run:
-```bash
-cargo run
-```
-
-### Issues with `libpq` on macOS
-
-Follow the link for the [solution](https://stackoverflow.com/a/70561227)
-
-## GDPR Compliance
-
-XTrackr is designed with GDPR compliance in mind:
-
-- IP anonymization
-- Configurable data retention
-- Consent management
-- Data minimization
-- Right to be forgotten support
+The handlers are in [src/main.rs](src/main.rs), configuration in
+[src/config.rs](src/config.rs), and database tables in [migrations](migrations).
+The database connection does not make the placeholder handlers persist data.
+This prototype is not ready to collect real visitor information.
 
 ## License
 
-MIT License
+[MIT](LICENSE).

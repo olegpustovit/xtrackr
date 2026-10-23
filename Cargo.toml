@@ -3,7 +3,7 @@ name = "xtrackr"
 version = "0.1.0"
 edition = "2021"
 authors = ["Oleg Pustovit <oleg@nex.sh>"]
-description = "A privacy-first, GDPR-compliant tracking solution"
+description = "Experimental Rust HTTP service with a PostgreSQL schema for analytics"
 
 [dependencies]
 tokio = { version = "1.36", features = ["full"] }
